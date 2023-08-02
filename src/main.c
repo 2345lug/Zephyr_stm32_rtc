@@ -12,6 +12,8 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/rtc/maxim_ds3231.h>
 
+#define GET_TIME_DELAY_MS	K_MSEC(1000)
+
 /* Format times as: YYYY-MM-DD HH:MM:SS DOW DOY */
 static const char *format_time(time_t time,
 			       long nsec)
@@ -50,9 +52,13 @@ int main(void)
 		return 0;
 	}
 
-	counter_get_value(ds3231, &now);
-	printk("Now %u: %s\n", now, format_time(now, -1));
-
+	for (;;)
+	{
+		counter_get_value(ds3231, &now);
+		printk("Now %u: %s\n", now, format_time(now, -1));
+		k_sleep(GET_TIME_DELAY_MS);
+	}
+	//Never reached	
 	k_sleep(K_FOREVER);
 	return 0;
 }
