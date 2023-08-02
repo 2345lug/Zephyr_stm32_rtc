@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&i2c0 { /* SDA 30, SCL 7 */
+&i2c1 { /* SDA CN5.9=PB8, SCL CN5.10=PB9, ISW CN5.1=D8=PA9 */
 	status = "okay";
 	ds3231: ds3231@68 {
 		compatible = "maxim,ds3231";
 		reg = <0x68>;
-		isw-gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		isw-gpios = <&gpioa 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 	};
 };
