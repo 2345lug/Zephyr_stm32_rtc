@@ -11,8 +11,28 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/rtc/maxim_ds3231.h>
+#include <zephyr/drivers/eeprom.h>
 
 #define GET_TIME_DELAY_MS	K_MSEC(1000)
+#define EEPROM_NODE DT_NODELABEL(eeprom_57)
+
+/*
+ * Get a device structure from a devicetree node with alias eeprom-0
+ */
+static const struct device *get_eeprom_device(void)
+{
+	const struct device *const dev = DEVICE_DT_GET_ONE(atmel_at24);
+
+	if (!device_is_ready(dev)) {
+		printk("\nError: Device \"%s\" is not ready; "
+		       "check the driver initialization logs for errors.\n",
+		       dev->name);
+		return NULL;
+	}
+
+	printk("Found EEPROM device \"%s\"\n", dev->name);
+	return dev;
+}
 
 /* Format times as: YYYY-MM-DD HH:MM:SS DOW DOY */
 static const char *format_time(time_t time,
@@ -36,6 +56,7 @@ int main(void)
 {
 	uint32_t now = 0;
 	const struct device *const ds3231 = DEVICE_DT_GET_ONE(maxim_ds3231);
+	const struct device *eeprom = get_eeprom_device();
 
 	if (!device_is_ready(ds3231)) {
 		printk("%s: device not ready.\n", ds3231->name);
@@ -51,6 +72,8 @@ int main(void)
 		printk("DS3231 stat fetch failed: %d\n", rc);
 		return 0;
 	}
+
+
 
 	for (;;)
 	{
