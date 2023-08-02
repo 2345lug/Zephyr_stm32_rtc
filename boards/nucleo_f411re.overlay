@@ -14,8 +14,8 @@
 	rtc_eeprom: eeprom@57 {
         compatible = "atmel,at24";
         reg = <0x57>;
-		address-width = <8>;
-		timeout = <100>;
+		address-width = <16>;
+		timeout = <5>;
         pagesize = <32>;
         size = <4096>;
     };
