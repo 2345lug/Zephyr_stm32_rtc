@@ -1,0 +1,3 @@
+name: shutdown_tracking
+build:
+  cmake: .
