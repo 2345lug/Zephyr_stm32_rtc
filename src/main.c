@@ -31,6 +31,13 @@ static int cmd_get_time(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_set_time(const struct shell *sh, size_t argc, char **argv)
+{
+	shell_print(sh, "Input string is: %s\n", argv[1]);
+
+	return 0;
+}
+
 static int cmd_get_shutdown_time(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -48,6 +55,7 @@ int main(void)
 
 	SHELL_STATIC_SUBCMD_SET_CREATE(rtc_time,
 		SHELL_CMD(get_time, NULL, "Get current time.", cmd_get_time),
+		SHELL_CMD(set_time, NULL, "Set current time. input string should be in format YYYY-MM-DD HH:MM:SS: ", cmd_set_time),
 		SHELL_CMD(get_shutdown_time, NULL, "Get last shutdown_time.", cmd_get_shutdown_time),
 		SHELL_SUBCMD_SET_END /* Array terminated. */
 	);
