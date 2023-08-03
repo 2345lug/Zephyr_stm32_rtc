@@ -65,7 +65,7 @@ static int cmd_get_shutdown_time(const struct shell *sh, size_t argc, char **arg
 	return 0;
 }
 
-int main(void)
+int shutdown_tracking_module(void)
 {
 	ds3231 = DEVICE_DT_GET_ONE(maxim_ds3231);
 	eeprom = get_eeprom_device();
