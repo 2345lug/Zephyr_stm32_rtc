@@ -64,3 +64,45 @@ uint32_t get_current_time(const struct device * rtc_device)
     counter_get_value(rtc_device, &current_time);
     return current_time;
 }
+
+/**
+       * Function for get current time value from RTC
+       * @param rtc_device Pointer to RTC device structure.
+       * @param current_time Current time value
+       * @return Operation result code
+       */
+int set_current_time (const struct device * rtc_device, time_t current_time)
+{
+    uint32_t syncclock_Hz = maxim_ds3231_syncclock_frequency(rtc_device);
+	uint32_t syncclock = maxim_ds3231_read_syncclock(rtc_device);
+	int rc = 0;
+
+    struct k_poll_signal ss;
+	struct sys_notify notify;
+	struct k_poll_event sevt = K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+							    K_POLL_MODE_NOTIFY_ONLY,
+							    &ss);
+
+	struct maxim_ds3231_syncpoint sp = {
+		.rtc = {
+			.tv_sec = current_time,
+			.tv_nsec = 0,
+		},
+		.syncclock = syncclock,
+	};
+
+    k_poll_signal_init(&ss);
+	sys_notify_init_signal(&notify, &ss);
+
+	rc = maxim_ds3231_set(rtc_device, &sp, &notify);
+
+    /* Wait for the set to complete. It should never take more than one second */
+	rc = k_poll(&sevt, 1, K_MSEC(1000));
+	rc = maxim_ds3231_get_syncpoint(rtc_device, &sp);
+
+    printk("wrote sync %d: %u %u at %u", rc,
+	       (uint32_t)sp.rtc.tv_sec, (uint32_t)sp.rtc.tv_nsec,
+	       sp.syncclock);
+
+    return rc;
+}
