@@ -12,27 +12,11 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/rtc/maxim_ds3231.h>
 #include <zephyr/drivers/eeprom.h>
+#include <zephyr/shell/shell.h>
+
+#include "eeprom_memory.h"
 
 #define GET_TIME_PERIOD_MS	K_MSEC(1000)
-#define EEPROM_RTC_VALUE_OFFSET 0
-
-/*
- * Get a device structure from a devicetree node with alias eeprom-0
- */
-static const struct device *get_eeprom_device(void)
-{
-	const struct device *const dev = DEVICE_DT_GET_ONE(atmel_at24);
-
-	if (!device_is_ready(dev)) {
-		printk("\nError: Device \"%s\" is not ready; "
-		       "check the driver initialization logs for errors.\n",
-		       dev->name);
-		return NULL;
-	}
-
-	printk("Found EEPROM device \"%s\"\n", dev->name);
-	return dev;
-}
 
 /* Format times as: YYYY-MM-DD HH:MM:SS DOW DOY */
 static const char *format_time(time_t time,
@@ -52,45 +36,45 @@ static const char *format_time(time_t time,
 	return buf;
 }
 
-static uint32_t compare_previous_value (const struct device * eeprom_device, uint32_t now)
+static int cmd_get_time(const struct shell *sh, size_t argc, char **argv)
 {
-	uint32_t readed_value = 0;
-	uint32_t time_different = 0;
-	int rc = 0;
-	rc = eeprom_read(eeprom_device, EEPROM_RTC_VALUE_OFFSET, &readed_value, sizeof(uint32_t));
-	
-	if (rc < 0) {
-		printk("Error: Couldn't read eeprom: err: %d.\n", rc);
-		return 0;
-	}
-	else
-	{
-		printk("Readed value is: %d. now value is: \n", readed_value, now);
-		if ((now - readed_value) > 0)
-		{
-			time_different = now - readed_value;
-			printk("Downtime is: %02d m %02ds. \n", time_different / 60, time_different % 60);
-		}
-		
-		return time_different;
-	}
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_print(sh, "pong");
+
+	return 0;
+}
+
+static int cmd_get_shutdown_time(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	uint32_t shutdown_time = get_previous_shutdown_time();
+	shell_print(sh, "Previous shutdown time is %u: %s\n", shutdown_time, format_time(shutdown_time, -1));
+
+	return 0;
 }
 
 int main(void)
 {
-	uint32_t now = 0;
-	uint32_t previous_now = 0; 
+	uint32_t now = 0;	
 	size_t eeprom_size = 0;
 	int rc = 0;
 	const struct device *const ds3231 = DEVICE_DT_GET_ONE(maxim_ds3231);
 	const struct device *eeprom = get_eeprom_device();
 
-	uint8_t readed_test_byte;
-
 	eeprom_size = eeprom_get_size(eeprom);
 	printk("Using eeprom with size of: %zu.\n", eeprom_size);
 
-	
+	SHELL_STATIC_SUBCMD_SET_CREATE(rtc_time,
+		SHELL_CMD(get_time, NULL, "Get current time.", cmd_get_time),
+		SHELL_CMD(get_shutdown_time, NULL, "Get last shutdown_time.", cmd_get_shutdown_time),
+		SHELL_SUBCMD_SET_END /* Array terminated. */
+	);
+
+	SHELL_CMD_REGISTER(rtc, &rtc_time, "RTC control commands", NULL);
 
 	if (!device_is_ready(ds3231)) {
 		printk("%s: device not ready.\n", ds3231->name);
@@ -108,17 +92,15 @@ int main(void)
 	}
 
 	counter_get_value(ds3231, &now);
-	compare_previous_value(eeprom, now);
+	compare_previous_time(eeprom, now);
 
 	for (;;)
 	{
 		counter_get_value(ds3231, &now);
+		#if 0
 		printk("Now %u: %s\n", now, format_time(now, -1));
-		rc = eeprom_write(eeprom, EEPROM_RTC_VALUE_OFFSET, &now, sizeof(uint32_t));
-		if (rc < 0) {
-			printk("Error: Couldn't write eeprom: err:%d.\n", rc);
-			return 0;
-		}
+		#endif
+		set_previous_time(eeprom, now);
 		k_sleep(GET_TIME_PERIOD_MS);
 	}
 	//Never reached	
