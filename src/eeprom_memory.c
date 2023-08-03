@@ -15,7 +15,8 @@ static uint32_t previous_shutdown_time = 0;
 const struct device *get_eeprom_device(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(atmel_at24);
-
+    size_t eeprom_size = 0;
+    
 	if (!device_is_ready(dev)) {
 		printk("\nError: Device \"%s\" is not ready; "
 		       "check the driver initialization logs for errors.\n",
@@ -24,6 +25,10 @@ const struct device *get_eeprom_device(void)
 	}
 
 	printk("Found EEPROM device \"%s\"\n", dev->name);
+
+    eeprom_size = eeprom_get_size(dev);
+	printk("Using eeprom with size of: %zu.\n", eeprom_size);
+
 	return dev;
 }
 
